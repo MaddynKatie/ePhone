@@ -26,13 +26,12 @@
     <header>Messages</header>
     <div id="chat"></div>
     <div class="input-area">
-        <input type="text" id="msgInput" placeholder="eMessage" autocomplete="off">
+        <input type="text" id="msgInput" placeholder="iMessage" autocomplete="off">
         <button id="sendBtn">↑</button>
     </div>
 
     <script>
-        // CONFIGURATION - USER TO UPDATE THIS
-        // Project ID: ephone-36837
+        // CONFIGURATION
         const firebaseConfig = {
             databaseURL: "https://ephone-36837-default-rtdb.firebaseio.com/"
         };
@@ -46,26 +45,41 @@
         const msgInput = document.getElementById('msgInput');
         const sendBtn = document.getElementById('sendBtn');
 
+        // Check for existing name
+        let myName = localStorage.getItem('chatName');
+        if (!myName) {
+            myName = prompt("Enter your name:") || "Guest_" + Math.floor(Math.random()*1000);
+            localStorage.setItem('chatName', myName);
+        }
+
         // Listen for new messages
         chatRef.limitToLast(50).on('value', (snapshot) => {
             chatDiv.innerHTML = '';
             const data = snapshot.val();
             if (data) {
-                Object.values(data).forEach(msg => {
-                    const isMe = msg.sender !== "ePhone";
+                Object.entries(data).forEach(([key, msg]) => {
+                    const isMe = msg.sender === myName;
+                    const bubbleContainer = document.createElement('div');
+                    bubbleContainer.style.display = 'flex';
+                    bubbleContainer.style.flexDirection = 'column';
+                    bubbleContainer.style.alignItems = isMe ? 'flex-end' : 'flex-start';
+                    bubbleContainer.style.width = '100%';
+
                     const bubble = document.createElement('div');
                     bubble.className = `msg ${isMe ? 'me' : 'other'}`;
                     
                     const senderDiv = document.createElement('div');
                     senderDiv.className = 'sender';
                     senderDiv.textContent = msg.sender;
+                    senderDiv.style.textAlign = isMe ? 'right' : 'left';
                     
                     const textDiv = document.createElement('div');
                     textDiv.textContent = msg.text;
                     
                     bubble.appendChild(senderDiv);
                     bubble.appendChild(textDiv);
-                    chatDiv.appendChild(bubble);
+                    bubbleContainer.appendChild(bubble);
+                    chatDiv.appendChild(bubbleContainer);
                 });
                 chatDiv.scrollTop = chatDiv.scrollHeight;
             }
@@ -75,10 +89,8 @@
         function send() {
             const text = msgInput.value.trim();
             if (text) {
-                const name = localStorage.getItem('chatName') || prompt("Enter your name:") || "Guest";
-                localStorage.setItem('chatName', name);
                 chatRef.push({
-                    sender: name,
+                    sender: myName,
                     text: text,
                     timestamp: Date.now()
                 });
