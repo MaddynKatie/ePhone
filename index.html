@@ -26,11 +26,67 @@
     <header>Messages</header>
     <div id="chat"></div>
     <div class="input-area">
+        <button id="attachBtn" style="background: #007aff; font-size: 24px;">+</button>
+        <input type="file" id="fileInput" style="display: none;" accept="image/*,video/*">
         <input type="text" id="msgInput" placeholder="iMessage" autocomplete="off">
         <button id="sendBtn">↑</button>
     </div>
 
     <script>
+        // ... (Firebase initialization remains same) ...
+        const attachBtn = document.getElementById('attachBtn');
+        const fileInput = document.getElementById('fileInput');
+
+        attachBtn.onclick = () => fileInput.click();
+
+        fileInput.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                const buffer = event.target.result;
+                const bytes = new Uint8Array(buffer);
+                const filename = file.name;
+                const fileSize = bytes.length;
+                const fileType = file.type.startsWith('image/') ? 1 : 2;
+                
+                // Send metadata first
+                const meta = {
+                    type: 'file_meta',
+                    filename: filename,
+                    size: fileSize,
+                    fileType: fileType
+                };
+                
+                // POST to Gateway ESP32
+                try {
+                    const res = await fetch('/upload_meta', {
+                        method: 'POST',
+                        body: JSON.stringify(meta)
+                    });
+                    
+                    if (res.ok) {
+                        // Send chunks
+                        const chunkSize = 200;
+                        const totalChunks = Math.ceil(fileSize / chunkSize);
+                        for (let i = 0; i < totalChunks; i++) {
+                            const chunk = bytes.slice(i * chunkSize, (i + 1) * chunkSize);
+                            await fetch('/upload_chunk', {
+                                method: 'POST',
+                                headers: { 'X-Chunk-Idx': i },
+                                body: chunk
+                            });
+                            console.log(`Sent chunk ${i+1}/${totalChunks}`);
+                        }
+                        alert("File sent to ePhone!");
+                    }
+                } catch (err) {
+                    console.error("Upload failed", err);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        };
         // CONFIGURATION
         const firebaseConfig = {
             databaseURL: "https://ephone-36837-default-rtdb.firebaseio.com/"
