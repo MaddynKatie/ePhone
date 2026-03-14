@@ -25,74 +25,19 @@
 <body>
     <header>Messages</header>
     <div id="chat"></div>
+    <div id="previewArea" style="display: none; padding: 10px; background: #fff; border-top: 1px solid #d1d1d6; white-space: nowrap; overflow-x: auto;"></div>
     <div class="input-area">
         <button id="attachBtn" style="background: #007aff; font-size: 24px;">+</button>
-        <input type="file" id="fileInput" style="display: none;" accept="image/*,video/*">
+        <input type="file" id="fileInput" style="display: none;" accept="image/*,video/*" multiple>
         <input type="text" id="msgInput" placeholder="iMessage" autocomplete="off">
         <button id="sendBtn">↑</button>
     </div>
 
     <script>
-        // ... (Firebase initialization remains same) ...
-        const attachBtn = document.getElementById('attachBtn');
-        const fileInput = document.getElementById('fileInput');
-
-        attachBtn.onclick = () => fileInput.click();
-
-        fileInput.onchange = async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = async (event) => {
-                const buffer = event.target.result;
-                const bytes = new Uint8Array(buffer);
-                const filename = file.name;
-                const fileSize = bytes.length;
-                const fileType = file.type.startsWith('image/') ? 1 : 2;
-                
-                // Send metadata first
-                const meta = {
-                    type: 'file_meta',
-                    filename: filename,
-                    size: fileSize,
-                    fileType: fileType
-                };
-                
-                // POST to Gateway ESP32
-                try {
-                    const res = await fetch('/upload_meta', {
-                        method: 'POST',
-                        body: JSON.stringify(meta)
-                    });
-                    
-                    if (res.ok) {
-                        // Send chunks
-                        const chunkSize = 200;
-                        const totalChunks = Math.ceil(fileSize / chunkSize);
-                        for (let i = 0; i < totalChunks; i++) {
-                            const chunk = bytes.slice(i * chunkSize, (i + 1) * chunkSize);
-                            await fetch('/upload_chunk', {
-                                method: 'POST',
-                                headers: { 'X-Chunk-Idx': i },
-                                body: chunk
-                            });
-                            console.log(`Sent chunk ${i+1}/${totalChunks}`);
-                        }
-                        alert("File sent to ePhone!");
-                    }
-                } catch (err) {
-                    console.error("Upload failed", err);
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        };
         // CONFIGURATION
         const firebaseConfig = {
             databaseURL: "https://ephone-36837-default-rtdb.firebaseio.com/"
         };
-
-        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
         const chatRef = database.ref('global_chat');
@@ -100,50 +45,118 @@
         const chatDiv = document.getElementById('chat');
         const msgInput = document.getElementById('msgInput');
         const sendBtn = document.getElementById('sendBtn');
+        const attachBtn = document.getElementById('attachBtn');
+        const fileInput = document.getElementById('fileInput');
+        const previewArea = document.getElementById('previewArea');
 
-        // Check for existing name
-        let myName = localStorage.getItem('chatName');
-        if (!myName) {
-            myName = prompt("Enter your name:") || "Guest_" + Math.floor(Math.random()*1000);
-            localStorage.setItem('chatName', myName);
+        let pendingFiles = [];
+
+        attachBtn.onclick = () => fileInput.click();
+
+        fileInput.onchange = (e) => {
+            const files = Array.from(e.target.files);
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const id = Date.now() + Math.random();
+                    pendingFiles.push({ id, file, data: event.target.result });
+                    renderPreviews();
+                };
+                reader.readAsArrayBuffer(file);
+            });
+            fileInput.value = '';
+        };
+
+        function renderPreviews() {
+            previewArea.innerHTML = '';
+            if (pendingFiles.length === 0) {
+                previewArea.style.display = 'none';
+                return;
+            }
+            previewArea.style.display = 'block';
+            pendingFiles.forEach((pf, index) => {
+                const container = document.createElement('div');
+                container.style.display = 'inline-block';
+                container.style.position = 'relative';
+                container.style.marginRight = '10px';
+                
+                const preview = document.createElement(pf.file.type.startsWith('video/') ? 'video' : 'img');
+                preview.style.height = '60px';
+                preview.style.borderRadius = '8px';
+                preview.style.background = '#000';
+                
+                if (pf.file.type.startsWith('image/')) {
+                    const blob = new Blob([pf.data], { type: pf.file.type });
+                    preview.src = URL.createObjectURL(blob);
+                } else {
+                    // Placeholder for video
+                    preview.poster = "https://img.icons8.com/ios-filled/50/000000/video-trimming.png";
+                }
+
+                const removeBtn = document.createElement('div');
+                removeBtn.textContent = '×';
+                removeBtn.style.position = 'absolute';
+                removeBtn.style.top = '-5px';
+                removeBtn.style.right = '-5px';
+                removeBtn.style.background = 'rgba(0,0,0,0.6)';
+                removeBtn.style.color = '#fff';
+                removeBtn.style.borderRadius = '50%';
+                removeBtn.style.width = '20px';
+                removeBtn.style.height = '20px';
+                removeBtn.style.textAlign = 'center';
+                removeBtn.style.cursor = 'pointer';
+                removeBtn.onclick = () => {
+                    pendingFiles.splice(index, 1);
+                    renderPreviews();
+                };
+
+                container.appendChild(preview);
+                container.appendChild(removeBtn);
+                previewArea.appendChild(container);
+            });
         }
 
-        // Listen for new messages
-        chatRef.limitToLast(50).on('value', (snapshot) => {
-            chatDiv.innerHTML = '';
-            const data = snapshot.val();
-            if (data) {
-                Object.entries(data).forEach(([key, msg]) => {
-                    const isMe = msg.sender === myName;
-                    const bubbleContainer = document.createElement('div');
-                    bubbleContainer.style.display = 'flex';
-                    bubbleContainer.style.flexDirection = 'column';
-                    bubbleContainer.style.alignItems = isMe ? 'flex-end' : 'flex-start';
-                    bubbleContainer.style.width = '100%';
-
-                    const bubble = document.createElement('div');
-                    bubble.className = `msg ${isMe ? 'me' : 'other'}`;
-                    
-                    const senderDiv = document.createElement('div');
-                    senderDiv.className = 'sender';
-                    senderDiv.textContent = msg.sender;
-                    senderDiv.style.textAlign = isMe ? 'right' : 'left';
-                    
-                    const textDiv = document.createElement('div');
-                    textDiv.textContent = msg.text;
-                    
-                    bubble.appendChild(senderDiv);
-                    bubble.appendChild(textDiv);
-                    bubbleContainer.appendChild(bubble);
-                    chatDiv.appendChild(bubbleContainer);
-                });
-                chatDiv.scrollTop = chatDiv.scrollHeight;
+        async function uploadFile(pf) {
+            const bytes = new Uint8Array(pf.data);
+            const filename = pf.file.name;
+            const fileSize = bytes.length;
+            const fileType = pf.file.type.startsWith('image/') ? 1 : 2;
+            
+            const meta = { type: 'file_meta', filename, size: fileSize, fileType };
+            
+            try {
+                const res = await fetch('/upload_meta', { method: 'POST', body: JSON.stringify(meta) });
+                if (res.ok) {
+                    const chunkSize = 200;
+                    const totalChunks = Math.ceil(fileSize / chunkSize);
+                    for (let i = 0; i < totalChunks; i++) {
+                        const chunk = bytes.slice(i * chunkSize, (i + 1) * chunkSize);
+                        await fetch('/upload_chunk', {
+                            method: 'POST',
+                            headers: { 'X-Chunk-Idx': i },
+                            body: chunk
+                        });
+                    }
+                    return true;
+                }
+            } catch (err) {
+                console.error("Upload failed", err);
             }
-        });
+            return false;
+        }
 
-        // Send Message
-        function send() {
+        async function send() {
             const text = msgInput.value.trim();
+            if (!text && pendingFiles.length === 0) return;
+
+            // Upload files first
+            for (let pf of pendingFiles) {
+                await uploadFile(pf);
+            }
+            pendingFiles = [];
+            renderPreviews();
+
+            // Send text message
             if (text) {
                 chatRef.push({
                     sender: myName,
@@ -152,10 +165,40 @@
                 });
                 msgInput.value = '';
             }
+            
+            // Trigger ESP-NOW for text as well (the sendBtn callback was actually doing fetch('/send') in previous version)
+            // But here we rely on the Gateway polling Firebase. 
+            // Wait, the previous version had fetch('/send?text='...). Let me keep that for real-time ESP-NOW push.
+            if (text) {
+                fetch('/send?text=' + encodeURIComponent(text));
+            }
         }
 
         sendBtn.onclick = send;
         msgInput.onkeypress = (e) => { if (e.key === 'Enter') send(); };
+
+        // ... (remaining Firebase listener / polling code) ...
+        let myName = localStorage.getItem('chatName');
+        if (!myName) {
+            myName = prompt("Enter your name:") || "Guest_" + Math.floor(Math.random()*1000);
+            localStorage.setItem('chatName', myName);
+        }
+
+        chatRef.limitToLast(50).on('value', (snapshot) => {
+            chatDiv.innerHTML = '';
+            const data = snapshot.val();
+            if (data) {
+                Object.entries(data).forEach(([key, msg]) => {
+                    const isMe = msg.sender === myName;
+                    const bubble = document.createElement('div');
+                    bubble.className = `msg ${isMe ? 'me' : 'other'}`;
+                    bubble.style.alignSelf = isMe ? 'flex-end' : 'flex-start';
+                    bubble.innerHTML = `<div class="sender">${msg.sender}</div><div>${msg.text}</div>`;
+                    chatDiv.appendChild(bubble);
+                });
+                chatDiv.scrollTop = chatDiv.scrollHeight;
+            }
+        });
     </script>
 </body>
 </html>
