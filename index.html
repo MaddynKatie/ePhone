@@ -116,6 +116,16 @@
             });
         }
 
+        function arrayBufferToBase64(buffer) {
+            let binary = '';
+            let bytes = new Uint8Array(buffer);
+            let len = bytes.byteLength;
+            for (let i = 0; i < len; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return window.btoa(binary);
+        }
+
         async function uploadFile(pf) {
             const bytes = new Uint8Array(pf.data);
             const filename = pf.file.name;
@@ -134,7 +144,7 @@
                         await fetch('/upload_chunk', {
                             method: 'POST',
                             headers: { 'X-Chunk-Idx': i },
-                            body: chunk
+                            body: "BASE64:" + arrayBufferToBase64(chunk)
                         });
                     }
                     return true;
@@ -193,7 +203,20 @@
                     const bubble = document.createElement('div');
                     bubble.className = `msg ${isMe ? 'me' : 'other'}`;
                     bubble.style.alignSelf = isMe ? 'flex-end' : 'flex-start';
-                    bubble.innerHTML = `<div class="sender">${msg.sender}</div><div>${msg.text}</div>`;
+                    
+                    let text = msg.text || "";
+                    let contentHtml = `<div>${text}</div>`;
+                    if (text.startsWith('[ATTACHMENT:')) {
+                        const filename = text.substring(12, text.length - 1);
+                        const isImg = /\.(jpg|jpeg|png|gif)$/i.test(filename);
+                        if (isImg) {
+                            contentHtml = `<img src="/get_attachment?t=${Date.now()}" style="max-width: 100%; border-radius: 8px; margin-top: 5px; cursor: pointer;" onclick="window.open(this.src)" />`;
+                        } else {
+                            contentHtml = `<a href="/get_attachment" target="_blank" style="color: inherit; text-decoration: underline;">Attachment: ${filename}</a>`;
+                        }
+                    }
+
+                    bubble.innerHTML = `<div class="sender">${msg.sender}</div>${contentHtml}`;
                     chatDiv.appendChild(bubble);
                 });
                 chatDiv.scrollTop = chatDiv.scrollHeight;
