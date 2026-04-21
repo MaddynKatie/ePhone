@@ -5,7 +5,7 @@ const multer = require('multer');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
-const { execSync, exec } = require('child_process');
+const { exec } = require('child_process');
 const { v4: uuidv4 } = require('uuid');
 
 const app = express();
@@ -15,14 +15,15 @@ const PORT = process.env.PORT || 3000;
 const MAX_DURATION_SECONDS = 60;
 const FRAME_WIDTH = 240;
 const FRAME_HEIGHT = 320;
-const FRAMES_PER_SECOND = 8; // Frames extracted per second of video
+const FRAMES_PER_SECOND = 8;
 
 // ─── Directory Setup ──────────────────────────────────────────────────────────
 const DATA_DIR = path.join(__dirname, 'data');
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
+const PUBLIC_DIR = path.join(__dirname, 'public');
 const VIDEOS_JSON = path.join(DATA_DIR, 'videos.json');
 
-[DATA_DIR, UPLOADS_DIR].forEach(d => {
+[DATA_DIR, UPLOADS_DIR, PUBLIC_DIR].forEach(d => {
   if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
 });
 
@@ -38,27 +39,28 @@ function saveVideos() {
 }
 
 // ─── ePhone Session State ─────────────────────────────────────────────────────
-// Single shared session - ePhone polls /api/frame/current
 let ephone_session = {
   videoIdx: 0,
   frameIdx: 0,
-  streaming: false,
-  lastFrameMs: 0,
 };
 
 function advanceFrame() {
   if (videos.length === 0) return;
+  // Clamp index first
+  if (ephone_session.videoIdx >= videos.length) ephone_session.videoIdx = 0;
   const vid = videos[ephone_session.videoIdx];
   ephone_session.frameIdx++;
   if (ephone_session.frameIdx >= vid.frameCount) {
-    ephone_session.frameIdx = 0; // Loop current video
+    ephone_session.frameIdx = 0;
   }
 }
 
 // ─── Middleware ────────────────────────────────────────────────────────────────
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+
+// Serve static files from public/ directory
+app.use(express.static(PUBLIC_DIR));
 
 // ─── Multer Config ─────────────────────────────────────────────────────────────
 const storage = multer.diskStorage({
@@ -68,7 +70,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 500 * 1024 * 1024 }, // 500MB raw upload limit
+  limits: { fileSize: 500 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowed = ['.mp4', '.mov', '.avi', '.webm', '.mkv'];
     const ext = path.extname(file.originalname).toLowerCase();
@@ -77,25 +79,36 @@ const upload = multer({
   },
 });
 
-// ─── Helper: get video duration via ffprobe ────────────────────────────────────
+// ─── Helper: get video duration ────────────────────────────────────────────────
 function getVideoDuration(filePath) {
   return new Promise((resolve, reject) => {
     exec(
       `ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${filePath}"`,
       (err, stdout) => {
         if (err) return reject(err);
-        resolve(parseFloat(stdout.trim()));
+        const dur = parseFloat(stdout.trim());
+        if (isNaN(dur)) return reject(new Error('Could not read video duration'));
+        resolve(dur);
       }
     );
   });
 }
 
-// ─── Helper: extract frames via ffmpeg ───────────────────────────────────────
+// ─── Helper: extract frames ───────────────────────────────────────────────────
 function extractFrames(inputPath, outputDir, fps, width, height) {
   return new Promise((resolve, reject) => {
     if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
-    const cmd = `ffmpeg -i "${inputPath}" -vf "fps=${fps},scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2:black" -q:v 5 -threads 2 "${outputDir}/frame_%04d.jpg" -y`;
-    exec(cmd, (err, stdout, stderr) => {
+    const cmd = [
+      'ffmpeg',
+      `-i "${inputPath}"`,
+      `-vf "fps=${fps},scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2:black"`,
+      '-q:v 5',
+      '-threads 2',
+      `"${outputDir}/frame_%04d.jpg"`,
+      '-y'
+    ].join(' ');
+
+    exec(cmd, { timeout: 120000 }, (err, stdout, stderr) => {
       if (err) return reject(new Error('ffmpeg error: ' + stderr));
       const frames = fs.readdirSync(outputDir).filter(f => f.endsWith('.jpg'));
       resolve(frames.length);
@@ -112,7 +125,6 @@ app.post('/api/upload', upload.single('video'), async (req, res) => {
   const videoDir = path.join(UPLOADS_DIR, id);
 
   try {
-    // 1. Check duration
     const duration = await getVideoDuration(rawPath);
     if (duration > MAX_DURATION_SECONDS) {
       fs.unlinkSync(rawPath);
@@ -121,25 +133,23 @@ app.post('/api/upload', upload.single('video'), async (req, res) => {
       });
     }
 
-    // 2. Extract frames
     fs.mkdirSync(videoDir, { recursive: true });
     const frameCount = await extractFrames(rawPath, videoDir, FRAMES_PER_SECOND, FRAME_WIDTH, FRAME_HEIGHT);
 
     if (frameCount === 0) {
       fs.unlinkSync(rawPath);
-      fs.rmdirSync(videoDir, { recursive: true });
+      fs.rmSync(videoDir, { recursive: true, force: true });
       return res.status(500).json({ error: 'Failed to extract frames from video.' });
     }
 
-    // 3. Move raw file into video dir
-    const finalVideoPath = path.join(videoDir, 'video' + path.extname(req.file.originalname));
+    const ext = path.extname(req.file.originalname) || '.mp4';
+    const finalVideoPath = path.join(videoDir, 'video' + ext);
     fs.renameSync(rawPath, finalVideoPath);
 
-    // 4. Save metadata
     const meta = {
       id,
-      title: req.body.title || 'Untitled Clip',
-      author: req.body.author || 'Anonymous',
+      title: (req.body.title || 'Untitled Clip').slice(0, 80),
+      author: (req.body.author || 'Anonymous').slice(0, 40),
       duration: Math.round(duration),
       frameCount,
       fps: FRAMES_PER_SECOND,
@@ -149,20 +159,20 @@ app.post('/api/upload', upload.single('video'), async (req, res) => {
       videoFile: path.basename(finalVideoPath),
     };
 
-    videos.unshift(meta); // New videos go to top of feed
+    videos.unshift(meta);
     saveVideos();
 
     res.json({ success: true, id, frameCount, duration: meta.duration });
   } catch (err) {
     console.error('Upload error:', err);
     try { fs.unlinkSync(rawPath); } catch {}
+    try { fs.rmSync(videoDir, { recursive: true, force: true }); } catch {}
     res.status(500).json({ error: 'Upload processing failed: ' + err.message });
   }
 });
 
 // ─── GET /api/videos ──────────────────────────────────────────────────────────
 app.get('/api/videos', (req, res) => {
-  // Add thumbnail URL to each video
   const enriched = videos.map(v => ({
     ...v,
     thumbnailUrl: `/api/thumb/${v.id}`,
@@ -179,28 +189,18 @@ app.get('/api/thumb/:id', (req, res) => {
   res.sendFile(framePath);
 });
 
-// ─── GET /api/frame/:id/:frameIdx ────────────────────────────────────────────
-app.get('/api/frame/:id/:frameIdx', (req, res) => {
-  const idx = parseInt(req.params.frameIdx, 10) + 1; // ffmpeg frames are 1-indexed
-  const frameFile = `frame_${String(idx).padStart(4, '0')}.jpg`;
-  const framePath = path.join(UPLOADS_DIR, req.params.id, frameFile);
-  if (!fs.existsSync(framePath)) return res.status(404).send('Not found');
-  res.set('Cache-Control', 'public, max-age=3600');
-  res.sendFile(framePath);
-});
-
 // ─── GET /api/frame/current ───────────────────────────────────────────────────
-// ePhone Gateway polls this to get the current JPEG frame for the active session
+// IMPORTANT: This must be defined BEFORE /api/frame/:id/:frameIdx
+// to prevent Express matching "current" as the :id param
 app.get('/api/frame/current', (req, res) => {
   if (videos.length === 0) return res.status(404).send('No videos');
 
-  // Clamp video index
   if (ephone_session.videoIdx >= videos.length) ephone_session.videoIdx = 0;
 
   const vid = videos[ephone_session.videoIdx];
   if (ephone_session.frameIdx >= vid.frameCount) ephone_session.frameIdx = 0;
 
-  const idx = ephone_session.frameIdx + 1;
+  const idx = ephone_session.frameIdx + 1; // ffmpeg frames are 1-indexed
   const frameFile = `frame_${String(idx).padStart(4, '0')}.jpg`;
   const framePath = path.join(UPLOADS_DIR, vid.id, frameFile);
 
@@ -214,17 +214,30 @@ app.get('/api/frame/current', (req, res) => {
   }
 
   if (!fs.existsSync(framePath)) return res.status(404).send('Frame not found');
-  res.set('Cache-Control', 'no-cache');
+  res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.sendFile(framePath);
+});
+
+// ─── GET /api/frame/:id/:frameIdx ────────────────────────────────────────────
+app.get('/api/frame/:id/:frameIdx', (req, res) => {
+  const frameNum = parseInt(req.params.frameIdx, 10);
+  if (isNaN(frameNum) || frameNum < 0) return res.status(400).send('Invalid frame index');
+
+  const idx = frameNum + 1; // ffmpeg frames are 1-indexed
+  const frameFile = `frame_${String(idx).padStart(4, '0')}.jpg`;
+  const framePath = path.join(UPLOADS_DIR, req.params.id, frameFile);
+  if (!fs.existsSync(framePath)) return res.status(404).send('Not found');
+  res.set('Cache-Control', 'public, max-age=3600');
   res.sendFile(framePath);
 });
 
 // ─── POST /api/next ───────────────────────────────────────────────────────────
-// ePhone Gateway: advance to next video
 app.post('/api/next', (req, res) => {
   if (videos.length === 0) return res.json({ ok: true });
   ephone_session.videoIdx = (ephone_session.videoIdx + 1) % videos.length;
   ephone_session.frameIdx = 0;
-  res.json({ ok: true, videoIdx: ephone_session.videoIdx, title: videos[ephone_session.videoIdx]?.title });
+  const vid = videos[ephone_session.videoIdx];
+  res.json({ ok: true, videoIdx: ephone_session.videoIdx, title: vid?.title });
 });
 
 // ─── POST /api/like/:id ───────────────────────────────────────────────────────
@@ -237,7 +250,6 @@ app.post('/api/like/:id', (req, res) => {
 });
 
 // ─── GET /api/video/:id ───────────────────────────────────────────────────────
-// Serve raw video for browser playback
 app.get('/api/video/:id', (req, res) => {
   const vid = videos.find(v => v.id === req.params.id);
   if (!vid) return res.status(404).send('Not found');
@@ -246,10 +258,21 @@ app.get('/api/video/:id', (req, res) => {
   res.sendFile(videoPath);
 });
 
+// ─── Catch-all: serve index.html for any unmatched GET ───────────────────────
+app.get('*', (req, res) => {
+  const indexPath = path.join(PUBLIC_DIR, 'index.html');
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.status(404).send('index.html not found. Make sure frontend files are in the public/ directory.');
+  }
+});
+
 // ─── Start ────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`🎬 ePhone Clips Server running on port ${PORT}`);
   console.log(`   Max video length: ${MAX_DURATION_SECONDS}s`);
   console.log(`   Frame resolution: ${FRAME_WIDTH}x${FRAME_HEIGHT} @ ${FRAMES_PER_SECOND}fps`);
   console.log(`   Videos loaded: ${videos.length}`);
+  console.log(`   Public dir: ${PUBLIC_DIR}`);
 });
