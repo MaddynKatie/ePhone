@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Clips — ePhone</title>
-  <meta name="description" content="Upload and discover short clips on ePhone Clips. A TikTok-like experience for your ePhone." />
+  <meta name="description" content="Upload and discover short clips on ePhone Clips." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -26,7 +26,7 @@
 
 <!-- ── Feed ────────────────────────────────────────────── -->
 <main class="feed" id="feed">
-  <div class="feed-empty" id="feed-empty">
+  <div class="feed-empty" id="feed-empty" hidden>
     <div class="empty-icon">🎬</div>
     <h2>No clips yet</h2>
     <p>Be the first to upload a short clip!</p>
@@ -47,35 +47,35 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.5 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="12" y2="12"/><line x1="15" y1="15" x2="12" y2="12"/></svg>
     </div>
     <p class="drop-title">Drag &amp; drop your video here</p>
-    <p class="drop-sub">or <button class="link-btn" id="browse-btn">browse files</button></p>
+    <p class="drop-sub">or <button class="link-btn" id="browse-btn" type="button">browse files</button></p>
     <p class="drop-limit">MP4, MOV, WEBM · Max 60 seconds</p>
     <input type="file" id="file-input" accept="video/*" hidden />
   </div>
 
   <div class="video-preview-wrap" id="video-preview-wrap" hidden>
-    <video id="video-preview" controls muted loop></video>
-    <button class="change-btn" id="change-video-btn">Change Video</button>
+    <video id="video-preview" controls muted loop playsinline></video>
+    <button class="change-btn" id="change-video-btn" type="button">Change Video</button>
   </div>
 
   <div class="form-fields">
     <div class="field-group">
       <label for="input-title">Title</label>
-      <input type="text" id="input-title" placeholder="Give your clip a title…" maxlength="80" />
+      <input type="text" id="input-title" placeholder="Give your clip a title…" maxlength="80" autocomplete="off" />
     </div>
     <div class="field-group">
       <label for="input-author">Your name</label>
-      <input type="text" id="input-author" placeholder="@username" maxlength="40" />
+      <input type="text" id="input-author" placeholder="@username" maxlength="40" autocomplete="off" />
     </div>
   </div>
 
-  <div class="upload-error" id="upload-error" hidden></div>
+  <div class="upload-error" id="upload-error" hidden role="alert"></div>
 
   <div class="upload-progress" id="upload-progress" hidden>
     <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
     <p id="progress-label">Uploading…</p>
   </div>
 
-  <button class="post-btn" id="post-btn" disabled>Post Clip</button>
+  <button class="post-btn" id="post-btn" type="button" disabled>Post Clip</button>
 </div>
 
 <script src="app.js"></script>
