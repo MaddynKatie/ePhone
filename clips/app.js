@@ -29,7 +29,7 @@ const progressLabel = document.getElementById('progress-label');
 // ─── Load Feed ────────────────────────────────────────────────────────────────
 async function loadFeed() {
   try {
-    const res = await fetch('/api/videos');
+    const res = await fetch('https://ephone-clot.onrender.com/api/videos');
     videos = await res.json();
 
     if (videos.length === 0) {
@@ -55,7 +55,7 @@ function buildCard(video) {
 
   const videoEl = document.createElement('video');
   videoEl.className = 'clip-video';
-  videoEl.src = `/api/video/${video.id}`;
+  videoEl.src = `https://ephone-clot.onrender.com/api/video/${video.id}`;
   videoEl.setAttribute('playsinline', '');
   videoEl.setAttribute('loop', '');
   videoEl.setAttribute('muted', '');
@@ -76,7 +76,7 @@ function buildCard(video) {
     e.stopPropagation();
     if (likedSet.has(video.id)) return; // Already liked
     try {
-      const r = await fetch(`/api/like/${video.id}`, { method: 'POST' });
+      const r = await fetch(`https://ephone-clot.onrender.com/api/like/${video.id}`, { method: 'POST' });
       const data = await r.json();
       likedSet.add(video.id);
       localStorage.setItem('clips_liked', JSON.stringify([...likedSet]));
@@ -272,7 +272,7 @@ postBtn.addEventListener('click', async () => {
 
   try {
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', '/api/upload');
+    xhr.open('POST', 'https://ephone-clot.onrender.com/api/upload');
 
     xhr.upload.addEventListener('progress', (e) => {
       if (e.lengthComputable) {
