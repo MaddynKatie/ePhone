@@ -1,5 +1,10 @@
 'use strict';
 
+// ─── API Base URL ─────────────────────────────────────────────────────────────
+// Points to the Render backend. The frontend is hosted on GitHub Pages,
+// so relative /api/* URLs would 404 — we need the absolute Render URL.
+const API = 'https://ephone-clot.onrender.com';
+
 // ─── State ────────────────────────────────────────────────────────────────────
 let videos = [];
 let selectedFile = null;
@@ -45,7 +50,7 @@ const progressLabel  = document.getElementById('progress-label');
 // ─── Load Feed ────────────────────────────────────────────────────────────────
 async function loadFeed() {
   try {
-    const res = await fetch('/api/videos');
+    const res = await fetch(`${API}/api/videos`);
     if (!res.ok) throw new Error(`Server error: ${res.status}`);
     videos = await res.json();
 
@@ -73,7 +78,7 @@ function buildCard(video) {
 
   const videoEl = document.createElement('video');
   videoEl.className = 'clip-video';
-  videoEl.src = `/api/video/${video.id}`;
+  videoEl.src = `${API}/api/video/${video.id}`;
   videoEl.setAttribute('playsinline', '');
   videoEl.setAttribute('loop', '');
   videoEl.setAttribute('muted', '');
@@ -95,7 +100,7 @@ function buildCard(video) {
     e.stopPropagation();
     if (likedSet.has(video.id)) return;
     try {
-      const r = await fetch(`/api/like/${video.id}`, { method: 'POST' });
+      const r = await fetch(`${API}/api/like/${video.id}`, { method: 'POST' });
       if (!r.ok) throw new Error('Like failed');
       const data = await r.json();
       likedSet.add(video.id);
@@ -111,7 +116,7 @@ function buildCard(video) {
   const shareBtn = makeActionBtn('🔗', null, 'share-btn');
   shareBtn.addEventListener('click', async (e) => {
     e.stopPropagation();
-    const url = `${location.origin}/api/video/${video.id}`;
+    const url = `${API}/api/video/${video.id}`;
     try {
       if (navigator.share) {
         await navigator.share({ title: video.title, url });
@@ -345,7 +350,7 @@ postBtn.addEventListener('click', async () => {
   formData.append('author', authorInput.value.trim() || 'Anonymous');
 
   const xhr = new XMLHttpRequest();
-  xhr.open('POST', '/api/upload');
+  xhr.open('POST', `${API}/api/upload`);
 
   xhr.upload.addEventListener('progress', (e) => {
     if (e.lengthComputable) {
