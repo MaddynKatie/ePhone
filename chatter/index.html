@@ -6,8 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Chatter</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script type="module" crossorigin src="/ePhone/chatter/assets/index-GavcaGtM.js"></script>
-  <link rel="stylesheet" crossorigin href="/ePhone/chatter/assets/index-CK30jRI4.css">
+  <script type="module" crossorigin src="/ePhone/chatter/assets/index-DtjAUYYo.js"></script>
+  <link rel="stylesheet" crossorigin href="/ePhone/chatter/assets/index-BN8oyei0.css">
 </head>
 <body>
   <div id="app">
@@ -52,8 +52,6 @@
                   <i class="fa-regular fa-image"></i>
                 </label>
                 <input type="file" id="image-input" accept="image/*" class="hidden">
-                <i class="fa-regular fa-face-smile"></i>
-                <i class="fa-solid fa-location-dot"></i>
               </div>
               <button id="btn-submit-post" class="btn-post-sm">Post</button>
             </div>
@@ -108,13 +106,9 @@
         <i class="fa-solid fa-magnifying-glass" style="color: var(--text-secondary);"></i>
         <input type="text" placeholder="Search Chatter">
       </div>
-      <div class="trending-box">
+      <div id="dynamic-news-container" class="trending-box">
         <h2 style="font-size: 1.2rem; font-weight: 800;">Real News</h2>
-        <div class="trending-item">
-          <div class="trending-topic">Global · Trending</div>
-          <div class="trending-name">Chatter Open Source</div>
-          <div class="trending-count">Build your own network</div>
-        </div>
+        <div class="loading" style="padding: 10px; color: var(--text-secondary); font-size: 0.9rem;">Loading news...</div>
       </div>
     </aside>
 
@@ -162,15 +156,22 @@
         </div>
         <div>
           <label style="color: var(--text-secondary); font-size: 0.9rem;">Bio</label>
-          <textarea id="edit-bio" class="auth-input" style="width: 100%; height: 100px; resize: none;"></textarea>
+          <textarea id="edit-bio" class="auth-input" style="width: 100%; height: 80px; resize: none;"></textarea>
         </div>
-        <div>
-          <label style="color: var(--text-secondary); font-size: 0.9rem;">Avatar URL</label>
-          <input type="text" id="edit-avatar" class="auth-input" style="width: 100%;">
+        <div style="display: flex; gap: 10px;">
+          <div style="flex: 1;">
+            <label style="color: var(--text-secondary); font-size: 0.9rem;">Avatar</label>
+            <input type="file" id="edit-avatar-file" class="hidden" accept="image/*">
+            <button id="btn-upload-avatar" class="btn-auth-outline" style="width: 100%; padding: 10px; border: 1px solid var(--border); font-size: 0.9rem;">Upload Pic</button>
+          </div>
+          <div style="flex: 1;">
+            <label style="color: var(--text-secondary); font-size: 0.9rem;">Banner Color</label>
+            <input type="color" id="edit-banner-color" style="width: 100%; height: 40px; background: none; border: 1px solid var(--border); cursor: pointer;">
+          </div>
         </div>
-        <div>
-          <label style="color: var(--text-secondary); font-size: 0.9rem;">Banner Color/URL</label>
-          <input type="text" id="edit-banner" class="auth-input" style="width: 100%;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <input type="checkbox" id="edit-show-email" style="width: 20px; height: 20px;">
+          <label for="edit-show-email">Show email on profile</label>
         </div>
       </div>
     </div>
