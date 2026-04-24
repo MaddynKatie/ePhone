@@ -6,8 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Chatter</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script type="module" crossorigin src="/ePhone/chatter/assets/index-BEed_QcN.js"></script>
-  <link rel="stylesheet" crossorigin href="/ePhone/chatter/assets/index-DAzYI5U4.css">
+  <script type="module" crossorigin src="/ePhone/chatter/assets/index-pZUb1ZG0.js"></script>
+  <link rel="stylesheet" crossorigin href="/ePhone/chatter/assets/index-POFotpFC.css">
 </head>
 <body>
   <div id="app">
@@ -64,18 +64,9 @@
       <!-- Section: Explore -->
       <section id="section-explore" class="hidden">
         <div style="padding: 20px;">
-          <h2 style="margin-bottom: 20px;">What's happening</h2>
-          <div class="trending-box" style="background: transparent; padding: 0;">
-            <div class="trending-item">
-              <div class="trending-topic">Technology · Trending</div>
-              <div class="trending-name">Chatter v1.0</div>
-              <div class="trending-count">Launched today!</div>
-            </div>
-            <div class="trending-item">
-              <div class="trending-topic">Coding</div>
-              <div class="trending-name">#Firebase</div>
-              <div class="trending-count">Real-time DB active</div>
-            </div>
+          <h2 style="margin-bottom: 20px;">Explore</h2>
+          <div id="explore-items-container" class="trending-box" style="background: transparent; padding: 0;">
+            <div class="loading" style="padding: 10px; color: var(--text-secondary);">Loading trends...</div>
           </div>
         </div>
       </section>
@@ -84,8 +75,10 @@
       <section id="section-profile" class="hidden">
         <div id="profile-banner-el" class="profile-banner"></div>
         <div class="profile-info">
-          <div id="profile-avatar-el" class="profile-avatar-large" style="background-image: url('https://abs.twimg.com/sticky/default_profile_images/default_profile_400x400.png')"></div>
-          <button id="btn-edit-profile-open" class="btn-edit-profile">Edit profile</button>
+          <div class="profile-top-row">
+            <div id="profile-avatar-el" class="profile-avatar-large"></div>
+            <button id="btn-edit-profile-open" class="btn-edit-profile">Edit profile</button>
+          </div>
           <div class="profile-meta">
             <h2 id="profile-name">Name</h2>
             <div id="profile-username" style="color: var(--text-secondary);">@username</div>
@@ -134,6 +127,7 @@
         <input type="email" id="auth-email" placeholder="Email" class="auth-input">
         <input type="password" id="auth-password" placeholder="Password" class="auth-input">
       </div>
+      <div id="auth-error" class="hidden" style="color: #f4212e; text-align: center; font-size: 0.9rem; background: rgba(244, 33, 46, 0.1); padding: 10px; border-radius: 8px;"></div>
       <button id="btn-auth-submit" class="btn-auth">Sign up</button>
       <div style="text-align: center; color: var(--text-secondary);">
         <span id="auth-switch-text">Already have an account?</span>
