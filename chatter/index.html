@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chatter</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script type="module" crossorigin src="/chatter/assets/index-C0DQUPJ0.js"></script>
+  <link rel="stylesheet" crossorigin href="/chatter/assets/index-D6o6iBOH.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Sidebar -->
+    <nav>
+      <div class="logo"><i class="fa-solid fa-comment-dots"></i></div>
+      <div class="nav-link"><i class="fa-solid fa-house"></i> <span>Home</span></div>
+      <div class="nav-link"><i class="fa-solid fa-hashtag"></i> <span>Explore</span></div>
+      <div class="nav-link"><i class="fa-solid fa-bell"></i> <span>Notifications</span></div>
+      <div class="nav-link"><i class="fa-solid fa-envelope"></i> <span>Messages</span></div>
+      <div class="nav-link"><i class="fa-solid fa-user"></i> <span>Profile</span></div>
+      <button class="btn-post">Post</button>
+      
+      <div id="user-profile-mini" class="nav-link" style="margin-top: auto;">
+        <div class="avatar"></div>
+        <div style="flex: 1; margin-left: 10px;" class="hidden-mobile">
+          <div id="mini-name" class="post-name">Guest</div>
+          <div id="mini-username" class="post-username">@guest</div>
+        </div>
+        <i class="fa-solid fa-ellipsis" style="margin-left: auto;"></i>
+      </div>
+    </nav>
+
+    <!-- Main Feed -->
+    <main>
+      <div class="header">
+        Home
+      </div>
+
+      <!-- Post Input -->
+      <div id="post-creator" class="post-input-container">
+        <div class="avatar"></div>
+        <div class="post-form">
+          <textarea id="post-textarea" placeholder="What's happening?" rows="1"></textarea>
+          <div id="image-preview-container" class="hidden" style="margin-top: 10px; position: relative;">
+            <img id="image-preview" src="" style="width: 100%; border-radius: 16px;">
+            <button id="remove-image" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.5); border: none; color: white; border-radius: 50%; width: 30px; height: 30px; cursor: pointer;">&times;</button>
+          </div>
+          <div class="post-actions">
+            <div class="post-icons">
+              <label for="image-input" style="cursor: pointer;">
+                <i class="fa-regular fa-image"></i>
+              </label>
+              <input type="file" id="image-input" accept="image/*" class="hidden">
+              <i class="fa-solid fa-list-ul"></i>
+              <i class="fa-regular fa-face-smile"></i>
+              <i class="fa-regular fa-calendar"></i>
+              <i class="fa-solid fa-location-dot"></i>
+            </div>
+            <button id="btn-submit-post" class="btn-post-sm">Post</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feed -->
+      <div id="feed-container">
+        <!-- Posts will be injected here -->
+        <div class="loading" style="padding: 20px; text-align: center; color: var(--text-secondary);">
+          <i class="fa-solid fa-spinner fa-spin"></i> Loading Chatter...
+        </div>
+      </div>
+    </main>
+
+    <!-- Right Sidebar -->
+    <aside>
+      <div class="search-container">
+        <i class="fa-solid fa-magnifying-glass" style="color: var(--text-secondary);"></i>
+        <input type="text" placeholder="Search Chatter">
+      </div>
+
+      <div class="trending-box">
+        <h2 style="font-size: 1.2rem; font-weight: 800;">Trends for you</h2>
+        <div class="trending-item">
+          <div class="trending-topic">Trending in Tech</div>
+          <div class="trending-name">#ChatterApp</div>
+          <div class="trending-count">12.5K Posts</div>
+        </div>
+        <div class="trending-item">
+          <div class="trending-topic">Technology · Trending</div>
+          <div class="trending-name">Firebase</div>
+          <div class="trending-count">48.2K Posts</div>
+        </div>
+        <div class="trending-item">
+          <div class="trending-topic">Coding</div>
+          <div class="trending-name">Vite.js</div>
+          <div class="trending-count">5,102 Posts</div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Auth Modal -->
+  <div id="auth-modal" class="auth-overlay hidden">
+    <div class="auth-modal">
+      <div style="display: flex; justify-content: space-between;">
+        <div class="logo" style="margin: 0;"><i class="fa-solid fa-comment-dots"></i></div>
+        <button id="close-auth" style="background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer;">&times;</button>
+      </div>
+      <h1 id="auth-title" class="auth-title">Join Chatter today</h1>
+      
+      <div id="auth-fields" style="display: flex; flex-direction: column; gap: 15px;">
+        <input type="text" id="auth-name" placeholder="Full Name" class="auth-input">
+        <input type="email" id="auth-email" placeholder="Email" class="auth-input">
+        <input type="password" id="auth-password" placeholder="Password" class="auth-input">
+      </div>
+
+      <button id="btn-auth-submit" class="btn-auth">Sign up</button>
+      <div style="text-align: center; color: var(--text-secondary);">
+        <span id="auth-switch-text">Already have an account?</span>
+        <button id="btn-auth-switch" style="background: none; border: none; color: var(--accent); font-weight: 600; cursor: pointer; padding-left: 5px;">Log in</button>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
