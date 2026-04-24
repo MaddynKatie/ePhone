@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Chatter</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script type="module" crossorigin src="/ePhone/chatter/assets/index-B1yp4Kgg.js"></script>
+  <script type="module" crossorigin src="/ePhone/chatter/assets/index-GavcaGtM.js"></script>
   <link rel="stylesheet" crossorigin href="/ePhone/chatter/assets/index-CK30jRI4.css">
 </head>
 <body>
@@ -16,13 +16,11 @@
       <div class="logo"><i class="fa-solid fa-comment-dots"></i></div>
       <div id="nav-home" class="nav-link active"><i class="fa-solid fa-house"></i> <span>Home</span></div>
       <div id="nav-explore" class="nav-link"><i class="fa-solid fa-hashtag"></i> <span>Explore</span></div>
-      <div id="nav-notifications" class="nav-link"><i class="fa-solid fa-bell"></i> <span>Notifications</span></div>
-      <div id="nav-messages" class="nav-link"><i class="fa-solid fa-envelope"></i> <span>Messages</span></div>
       <div id="nav-profile" class="nav-link"><i class="fa-solid fa-user"></i> <span>Profile</span></div>
       <button class="btn-post" id="btn-sidebar-post">Post</button>
       
       <div id="user-profile-mini" class="nav-link" style="margin-top: auto;">
-        <div class="avatar" style="background-image: url('https://abs.twimg.com/sticky/default_profile_images/default_profile_400x400.png')"></div>
+        <div id="mini-avatar" class="avatar" style="background-image: url('https://abs.twimg.com/sticky/default_profile_images/default_profile_400x400.png')"></div>
         <div style="flex: 1; margin-left: 10px;" class="hidden-mobile">
           <div id="mini-name" class="post-name">Guest</div>
           <div id="mini-username" class="post-username">@guest</div>
@@ -41,7 +39,7 @@
       <section id="section-home">
         <!-- Post Input -->
         <div id="post-creator" class="post-input-container">
-          <div class="avatar" style="background-image: url('https://abs.twimg.com/sticky/default_profile_images/default_profile_400x400.png')"></div>
+          <div id="post-avatar" class="avatar" style="background-image: url('https://abs.twimg.com/sticky/default_profile_images/default_profile_400x400.png')"></div>
           <div class="post-form">
             <textarea id="post-textarea" placeholder="What's happening?" rows="1"></textarea>
             <div id="image-preview-container" class="hidden" style="margin-top: 10px; position: relative;">
@@ -54,9 +52,7 @@
                   <i class="fa-regular fa-image"></i>
                 </label>
                 <input type="file" id="image-input" accept="image/*" class="hidden">
-                <i class="fa-solid fa-list-ul"></i>
                 <i class="fa-regular fa-face-smile"></i>
-                <i class="fa-regular fa-calendar"></i>
                 <i class="fa-solid fa-location-dot"></i>
               </div>
               <button id="btn-submit-post" class="btn-post-sm">Post</button>
@@ -70,28 +66,32 @@
       <!-- Section: Explore -->
       <section id="section-explore" class="hidden">
         <div style="padding: 20px;">
-          <h2 style="margin-bottom: 20px;">Trends for you</h2>
+          <h2 style="margin-bottom: 20px;">What's happening</h2>
           <div class="trending-box" style="background: transparent; padding: 0;">
             <div class="trending-item">
-              <div class="trending-topic">Trending in Tech</div>
-              <div class="trending-name">#ChatterWeb</div>
-              <div class="trending-count">24.1K Posts</div>
+              <div class="trending-topic">Technology · Trending</div>
+              <div class="trending-name">Chatter v1.0</div>
+              <div class="trending-count">Launched today!</div>
             </div>
-            <!-- More trends here -->
+            <div class="trending-item">
+              <div class="trending-topic">Coding</div>
+              <div class="trending-name">#Firebase</div>
+              <div class="trending-count">Real-time DB active</div>
+            </div>
           </div>
         </div>
       </section>
 
       <!-- Section: Profile -->
       <section id="section-profile" class="hidden">
-        <div class="profile-banner"></div>
+        <div id="profile-banner-el" class="profile-banner"></div>
         <div class="profile-info">
-          <div class="profile-avatar-large" style="background-image: url('https://abs.twimg.com/sticky/default_profile_images/default_profile_400x400.png')"></div>
-          <button class="btn-edit-profile">Edit profile</button>
+          <div id="profile-avatar-el" class="profile-avatar-large" style="background-image: url('https://abs.twimg.com/sticky/default_profile_images/default_profile_400x400.png')"></div>
+          <button id="btn-edit-profile-open" class="btn-edit-profile">Edit profile</button>
           <div class="profile-meta">
             <h2 id="profile-name">Name</h2>
             <div id="profile-username" style="color: var(--text-secondary);">@username</div>
-            <div class="profile-bio">Just joined Chatter!</div>
+            <div id="profile-bio" class="profile-bio">Just joined Chatter!</div>
             <div class="profile-stats">
               <span><b>0</b> Following</span>
               <span><b>0</b> Followers</span>
@@ -99,13 +99,6 @@
           </div>
         </div>
         <div id="profile-feed-container"></div>
-      </section>
-
-      <!-- Section: Placeholder -->
-      <section id="section-placeholder" class="hidden" style="padding: 50px; text-align: center; color: var(--text-secondary);">
-        <i class="fa-solid fa-hammer" style="font-size: 3rem; margin-bottom: 20px;"></i>
-        <h2>Coming Soon</h2>
-        <p>This feature is currently under development.</p>
       </section>
     </main>
 
@@ -116,16 +109,11 @@
         <input type="text" placeholder="Search Chatter">
       </div>
       <div class="trending-box">
-        <h2 style="font-size: 1.2rem; font-weight: 800;">What's happening</h2>
+        <h2 style="font-size: 1.2rem; font-weight: 800;">Real News</h2>
         <div class="trending-item">
-          <div class="trending-topic">Technology · Trending</div>
-          <div class="trending-name">Cloudinary</div>
-          <div class="trending-count">12.5K Posts</div>
-        </div>
-        <div class="trending-item">
-          <div class="trending-topic">Programming</div>
-          <div class="trending-name">Firebase Firestore</div>
-          <div class="trending-count">48.2K Posts</div>
+          <div class="trending-topic">Global · Trending</div>
+          <div class="trending-name">Chatter Open Source</div>
+          <div class="trending-count">Build your own network</div>
         </div>
       </div>
     </aside>
@@ -134,7 +122,6 @@
     <div class="mobile-nav">
       <i id="mob-nav-home" class="fa-solid fa-house active"></i>
       <i id="mob-nav-explore" class="fa-solid fa-magnifying-glass"></i>
-      <i id="mob-nav-notifications" class="fa-solid fa-bell"></i>
       <i id="mob-nav-profile" class="fa-solid fa-user"></i>
     </div>
     <div id="fab-post" class="fab"><i class="fa-solid fa-plus"></i></div>
@@ -161,6 +148,34 @@
     </div>
   </div>
 
+  <!-- Edit Profile Modal -->
+  <div id="edit-profile-modal" class="modal-overlay hidden">
+    <div class="modal-content" style="width: 500px;">
+      <div class="modal-header">
+        <h2 class="modal-title">Edit Profile</h2>
+        <button id="btn-edit-profile-save" class="btn-post-sm">Save</button>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 15px;">
+        <div>
+          <label style="color: var(--text-secondary); font-size: 0.9rem;">Name</label>
+          <input type="text" id="edit-name" class="auth-input" style="width: 100%;">
+        </div>
+        <div>
+          <label style="color: var(--text-secondary); font-size: 0.9rem;">Bio</label>
+          <textarea id="edit-bio" class="auth-input" style="width: 100%; height: 100px; resize: none;"></textarea>
+        </div>
+        <div>
+          <label style="color: var(--text-secondary); font-size: 0.9rem;">Avatar URL</label>
+          <input type="text" id="edit-avatar" class="auth-input" style="width: 100%;">
+        </div>
+        <div>
+          <label style="color: var(--text-secondary); font-size: 0.9rem;">Banner Color/URL</label>
+          <input type="text" id="edit-banner" class="auth-input" style="width: 100%;">
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Comment Modal -->
   <div id="comment-modal" class="modal-overlay hidden">
     <div class="modal-content">
@@ -168,11 +183,9 @@
         <button id="close-comment" style="background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer;">&times;</button>
         <button id="btn-submit-comment" class="btn-post-sm">Reply</button>
       </div>
-      <div id="target-post-preview" style="border-left: 2px solid var(--border); margin-left: 24px; padding-left: 24px; padding-bottom: 20px;">
-        <!-- Original post preview here -->
-      </div>
+      <div id="target-post-preview" style="border-left: 2px solid var(--border); margin-left: 24px; padding-left: 24px; padding-bottom: 20px;"></div>
       <div style="display: flex; gap: 12px;">
-        <div class="avatar" style="background-image: url('https://abs.twimg.com/sticky/default_profile_images/default_profile_400x400.png')"></div>
+        <div id="comment-avatar" class="avatar" style="background-image: url('https://abs.twimg.com/sticky/default_profile_images/default_profile_400x400.png')"></div>
         <textarea id="comment-textarea" placeholder="Post your reply" style="font-size: 1.2rem;"></textarea>
       </div>
     </div>
